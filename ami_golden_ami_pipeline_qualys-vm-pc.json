@@ -39,16 +39,20 @@
                 "Description": "Please enter the qualys Scanner Name for the Qualys agent which will be installed on your AMI for assessment. You get to override this later by editing the SSM parameter "
               },
 
-      "qualysOptionId": {
+      "qualysVmOptionId": {
                  "Type": "String",
-                 "Default": "<ENTER QUALYS OPTION ID>",
-                 "Description": "Please enter the qualysOptionId  for the Qualys agent which will be installed on your AMI for assessment. You get to override this later by editing the SSM parameter "
+                 "Default": "<ENTER QUALYS VM OPTION ID>",
+                 "Description": "Please enter the VM Option Profile ID used for running the Qualys Vulnerability assessment. You get to override this later by editing the SSM parameter "
                },
 
       "qualysRunPcScan": {
                 "Type": "String",
-                "Default": "<Enter YES or NO>",
-                "Description": "Please specify whether to run Qualys Compliance Scans in your Golden AMI Pipeline, if YES, then you must specify a PC Option ID. You get to override this later by editing the SSM parameter "
+                "Default": "YES",
+                "Description": "Please specify whether to run Qualys Compliance Scans in your Golden AMI Pipeline, if YES, then you must specify a PC Option ID. You get to override this later by editing the SSM parameter ",
+                "AllowedValues": [
+                  "YES",
+                  "NO"
+                ]
                },
 
       "qualysPCOptionId": {
@@ -127,7 +131,7 @@
             "Type": "String",
             "Default": "myemail@mycompany.com",
             "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
-            "Description": "Your email ID for receiving Inspector assessment results and golden AMI creation notification."
+            "Description": "Your email ID for receiving Qualys assessment results and golden AMI creation notification."
 
            },
 
@@ -154,7 +158,45 @@
                "Type":"String",
                "Default":"goldenAMICrossAccountRole",
                "Description": "Cross account role suffix for managing Golden AMI metadata Parameters in child account(s). This role needs to exist in each account specified in MetadataJSON parameter."
-            }
+            },
+      "qualysActivationID": {
+        "Default": "<ENTER CLOUD AGENT ACTIVATION ID>",
+        "Description": "Your Qualys Cloud Agent Activation ID",
+        "Type": "String"
+        },
+      "qualysCustomerID": {
+        "Default": "<ENTER CLOUD AGENT CUSTOMER ID>",
+        "Description": "Your Qualys Cloud Agent Customer ID",
+        "Type": "String"
+        },
+      "qualysAgentLocationWindows": {
+        "Default": "<ENTER URL FOR QCA WINDOWS AGENT>",
+        "Description": "(Optional) Enter FQDN or full path of Windows Qualys Cloud Agent Installer's location",
+        "Type": "String"
+        },
+      "qualysAgentLocationDebian": {
+        "Default": "<ENTER URL FOR QCA DEBIAN AGENT>",
+        "Description": "(Optional) Enter FQDN or full path of Debian Qualys Cloud Agent Installer's location",
+        "Type": "String"
+        },
+      "qualysAgentLocationRPM": {
+        "Default": "<ENTER URL FOR QCA RPM AGENT>",
+        "Description": "(Optional) Enter FQDN or full path of RPM Qualys Cloud Agent Installer's location",
+        "Type": "String"
+        },
+      "qualysQcaLogLevel": {
+        "Type": "String",
+        "Default": "0",
+        "Description": "(Optional)  A higher value corresponds to more verbosity. Default is to report only errors (0) ",
+        "AllowedValues": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+          ]
+        }
     },
 
     "Resources": {
@@ -223,12 +265,12 @@
          }
       },
 
-      "QualysOptionId": {
+      "QualysVmOptionId": {
          "Type": "AWS::SSM::Parameter",
          "Properties": {
-            "Name": "/GoldenAMI/Qualys/QualysOptionId",
+            "Name": "/GoldenAMI/Qualys/QualysVmOptionId",
             "Type": "String",
-            "Value": {"Ref":"qualysOptionId"},
+            "Value": {"Ref":"qualysVmOptionId"},
             "Description": "SSM Parameter for Qualys Option ID."
             }
           },
@@ -260,6 +302,66 @@
             "Type": "String",
             "Value": {"Ref":"qualysParentTagId"},
             "Description": "SSM Parameter for Qualys Parent Tag ID"
+            }
+          },
+
+      "QualysQcaActivationID": {
+         "Type": "AWS::SSM::Parameter",
+         "Properties": {
+            "Name": "/GoldenAMI/Qualys/QualysQcaActivationID",
+            "Type": "String",
+            "Value": {"Ref":"qualysActivationID"},
+            "Description": "SSM Parameter for Qualys QCA Activation ID"
+            }
+          },
+
+      "QualysQcaCustomerID": {
+         "Type": "AWS::SSM::Parameter",
+         "Properties": {
+            "Name": "/GoldenAMI/Qualys/QualysQcaCustomerID",
+            "Type": "String",
+            "Value": {"Ref":"qualysCustomerID"},
+            "Description": "SSM Parameter for Qualys QCA Customer ID"
+            }
+          },
+
+      "QualysAgentLocationWindows": {
+         "Type": "AWS::SSM::Parameter",
+         "Properties": {
+            "Name": "/GoldenAMI/Qualys/QualysAgentLocationWindows",
+            "Type": "String",
+            "Value": {"Ref":"qualysAgentLocationWindows"},
+            "Description": "(Optional) Enter FQDN or full path of Windows Qualys Cloud Agent Installer's location"
+            }
+          },
+
+      "QualysAgentLocationDebian": {
+         "Type": "AWS::SSM::Parameter",
+         "Properties": {
+            "Name": "/GoldenAMI/Qualys/QualysAgentLocationDebian",
+            "Type": "String",
+            "Value": {"Ref":"qualysAgentLocationDebian"},
+            "Description": "(Optional) Enter FQDN or full path of Debian Qualys Cloud Agent Installer's location"
+            }
+          },
+
+      "QualysAgentLocationRPM": {
+         "Type": "AWS::SSM::Parameter",
+         "Properties": {
+            "Name": "/GoldenAMI/Qualys/QualysAgentLocationRPM",
+            "Type": "String",
+            "Value": {"Ref":"qualysAgentLocationRPM"},
+            "Description": "(Optional) Enter FQDN or full path of RPM Qualys Cloud Agent Installer's location"
+            }
+          },
+
+      "QualysQcaLogLevel": {
+         "Type": "AWS::SSM::Parameter",
+         "Properties": {
+            "Name": "/GoldenAMI/Qualys/QualysQcaLogLevel",
+            "Type": "String",
+            "Value": {"Ref":"qualysQcaLogLevel"},
+            "Description": "(Optional)  A higher value corresponds to more verbosity. Default is to report only errors (0) "
             }
           },
 
@@ -1341,8 +1443,8 @@
                                 "type": "String"
                               },
 
-                              "QualysOptionId": {
-                                "default": "{{ssm:/GoldenAMI/Qualys/QualysOptionId}}",
+                              "QualysVmOptionId": {
+                                "default": "{{ssm:/GoldenAMI/Qualys/QualysVmOptionId}}",
                                 "description": "Option ID for launching Qualys VM Scan",
                                 "type": "String"
                               },
@@ -1356,6 +1458,36 @@
                               "QualysPCOptionId": {
                                 "default": "{{ssm:/GoldenAMI/Qualys/QualysPCOptionId}}",
                                 "description": "Option ID for launching Qualys PC Scan",
+                                "type": "String"
+                              },
+
+                              "QualysQcaActivationID": {
+                                "default": "{{ssm:/GoldenAMI/Qualys/QualysQcaActivationID}}",
+                                "description": "SSM Parameter for Qualys QCA Activation ID",
+                                "type": "String"
+                              },
+
+                              "QualysQcaCustomerID": {
+                                "default": "{{ssm:/GoldenAMI/Qualys/QualysQcaCustomerID}}",
+                                "description": "SSM Parameter for Qualys QCA Customer ID",
+                                "type": "String"
+                              },
+
+                              "QualysAgentLocationDebian": {
+                                "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationDebian}}",
+                                "description": "SSM Parameter for Debian Qualys Cloud Agent Installer's location",
+                                "type": "String"
+                              },
+
+                              "QualysAgentLocationRPM": {
+                                "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationRPM}}",
+                                "description": "SSM Parameter for of RPM Qualys Cloud Agent Installer's location",
+                                "type": "String"
+                              },
+
+                              "QualysQcaLogLevel": {
+                                "default": "{{ssm:/GoldenAMI/Qualys/QualysQcaLogLevel}}",
+                                "description": "SSM Parameter for Qualys Cloud Agent Log Level",
                                 "type": "String"
                               },
 
@@ -1526,6 +1658,74 @@
                                       }
                                   }
                               },
+
+                              {
+                                  "action": "aws:runCommand",
+                                  "name": "InstallQualysCloudAgentOnLinux",
+                                  "timeoutSeconds": 600,
+                                  "inputs": {
+                                    "Parameters": {
+                                      "commands": [
+                                        "#!/bin/bash",
+                                        "#set -eux",
+                                        "#Check Whether the Qualys Cloud Agent is already installed",
+                                        "status=$( sudo service qualys-cloud-agent status | grep Active )",
+                                        "if [[ -z \"$status\" ]]; then",
+                                        " # Check whether the OS is Debian or RPM based Linux and set the download location",
+                                        " os=$( grep -Ei 'debian|ubuntu|mint' /etc/*release )",
+                                        " if [[ \"$os\" || -f \"/etc/debian_version\" ]]; then",
+                                        "   INSTALLER_FILE_URL={{ QualysAgentLocationDebian }}",
+                                        "   opersys=\"DEB\"",
+                                        " else",
+                                        "   INSTALLER_FILE_URL={{ QualysAgentLocationRPM }}",
+                                        "   opersys=\"RPM\"",
+                                        " fi",
+                                        "   echo $opersys",
+                                        "   echo $INSTALLER_FILE_URL",
+                                        " # Checks whether agent location is a FQDN or full path and invoke download or copy function ",
+                                        " if [[ -n \"$INSTALLER_FILE_URL\" ]]; then",
+                                        "   if [[ \"${INSTALLER_FILE_URL:0:4}\" == 'http' ]]; then",
+                                        "     curl -s -o qualys-cloud-agent.x86_64 ${INSTALLER_FILE_URL}",
+                                        "     rpm -qip qualys-cloud-agent.x86_64",
+                                        "     if [[ $? != 0 ]]; then",
+                                        "       echo \"Failed to download installer from ${INSTALLER_FILE_URL} - Please check file source URL or ACL\"",
+                                        "       exit 3",
+                                        "     fi",
+                                        "   else",
+                                        "     cp $INSTALLER_FILE_URL qualys-cloud-agent.x86_64 ",
+                                        "   fi",
+                                        " else",
+                                        "   echo \"No installation path specified for Qualys Cloud Agent\"",
+                                        "   exit 4",
+                                        " fi",
+                                        " if [ \"$opersys\" = \"RPM\" ]; then",
+                                        "   sleep 5",
+                                        "   rpm -ivh ./qualys-cloud-agent.x86_64",
+                                        "   sleep 5",
+                                        "   sudo service qualys-cloud-agent stop",
+                                        "   sleep 5",
+                                        "   sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh LogLevel={{ QualysQcaLogLevel }} ActivationId={{ QualysQcaActivationID }} CustomerId={{ QualysQcaCustomerID }}",
+                                        " fi",
+                                        " if [ \"$opersys\" = \"DEB\" ]; then",
+                                        "   sudo dpkg --install ./qualys-cloud-agent.x86_64",
+                                        "   sleep 5",
+                                        "   sudo service qualys-cloud-agent stop",
+                                        "   sleep 5",
+                                        "   sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh LogLevel={{ QualysQcaLogLevel }} ActivationId={{ QualysQcaActivationID }} CustomerId={{ QualysQcaCustomerID }}",
+                                        "   sleep 5",
+                                        " fi",
+                                        "else",
+                                        "echo \"QualysCloudAgent is already installed on this and running\"",
+                                        "fi"
+                                      ]
+                                    },
+                                  "InstanceIds": [
+                                    "{{startInstances.InstanceIds}}"
+                                  ],
+                                  "DocumentName": "AWS-RunShellScript"
+                                }
+                              },
+
                               {
                                   "name": "stopInstance",
                                   "action": "aws:changeInstanceState",
@@ -1627,10 +1827,12 @@
                                       "QualysUsername=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysUsername}} --query 'Parameter.Value' --output text)",
                                       "QualysPassword=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysPassword}} --query 'Parameter.Value' --output text)",
                                       "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"{\\\"ServiceRequest\\\":{\\\"data\\\":{\\\"Tag\\\":{\\\"name\\\":\\\"GAP $AMI_ID $INSTANCE_ID\\\",\\\"parentTagId\\\":\\\"{{QualysParentTagId}}\\\",\\\"ruleType\\\":\\\"CLOUD_ASSET\\\",\\\"provider\\\":\\\"EC2\\\",\\\"ruleText\\\":\\\"aws.ec2.imageId:$AMI_ID\\\",\\\"color\\\":\\\"#FFD700\\\"}}}}\" \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag/\" > create-tag-log.txt",
-                                      "sleep 2m",
+                                      "sleep 5m",
+                                      "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: text/xml\" -H \"Accept: text/xml\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field=\"tagName\" operator=\"EQUALS\">GAP $AMI_ID $INSTANCE_ID</Criteria></filters></ServiceRequest>\" {{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset ",
+                                      "sleep 5m",
                                       "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\"> ec2-scan-launch-log.txt",
                                       "sleep 5m",
-                                      "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\"> vm-scan-launch-log.txt",
+                                      "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\"> vm-scan-launch-log.txt",
                                       "if [ {{QualysRunPcScan}} == \"YES\" ]; then curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\"> pc-scan-launch-log.txt",
                                       "fi",
                                       "sleep 10m"
@@ -1702,6 +1904,8 @@
                                       "Duration": "PT01M"
                                   }
                               },
+
+
                               {
                                 "maxAttempts": 1,
                                 "inputs": {
@@ -2261,8 +2465,8 @@
                                   "description": "SSM parameter name of the Qualys password to access API",
                                   "type": "String"
                                 },
-                                "QualysOptionId": {
-                                  "default": "/GoldenAMI/Qualys/QualysOptionId",
+                                "QualysVmOptionId": {
+                                  "default": "/GoldenAMI/Qualys/QualysVmOptionId",
                                   "description": "SSM parameter name of Qualys option id to start scan to access API",
                                   "type": "String"
                                 },
@@ -2332,10 +2536,12 @@
                                 "QualysUsername=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysUsername}} --query 'Parameter.Value' --output text)",
                                 "QualysPassword=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysPassword}} --query 'Parameter.Value' --output text)",
                                 "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"{\\\"ServiceRequest\\\":{\\\"data\\\":{\\\"Tag\\\":{\\\"name\\\":\\\"GAP $AMI_ID $INSTANCE_ID\\\",\\\"parentTagId\\\":\\\"{{QualysParentTagId}}\\\",\\\"ruleType\\\":\\\"CLOUD_ASSET\\\",\\\"provider\\\":\\\"EC2\\\",\\\"ruleText\\\":\\\"aws.ec2.imageId:$AMI_ID\\\",\\\"color\\\":\\\"#FFD700\\\"}}}}\" \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag/\" > create-tag-log.txt",
-                                "sleep 2m",
+                                "sleep 5m",
+                                "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: text/xml\" -H \"Accept: text/xml\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field=\"tagName\" operator=\"EQUALS\">GAP $AMI_ID $INSTANCE_ID</Criteria></filters></ServiceRequest>\" {{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset ",
+                                "sleep 5m",
                                 "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\"> ec2-scan-launch-log.txt",
                                 "sleep 5m",
-                                "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\" > vm-scan-launch-log.txt",
+                                "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\" > vm-scan-launch-log.txt",
                                 "if [ {{QualysRunPcScan}} == \"YES\" ]; then curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\" > pc-scan-launch-log.txt",
                                 "fi",
                                 "sleep 10m"
@@ -2401,7 +2607,7 @@
                         "\",\"sshKeyParamName\":\"/GoldenAMI/Qualys/SSHKeyName",
                         "\",\"qualysApiUrlParamName\":\"",
                           {"Ref":"qualysApiUrl"},
-                        "\",\"qualysOptionIdParamName\":\"/GoldenAMI/Qualys/QualysOptionId",
+                        "\",\"qualysVmOptionIdParamName\":\"/GoldenAMI/Qualys/QualysVmOptionId",
                                "\"}"
                         ]
                      ]
@@ -2572,7 +2778,7 @@
                         "\n","    amisParamName = event['AMIsParamName'];",
                         "\n","    qualysUsername = event['qualysUserParamName'];",
                         "\n","    qualysPassword = event['qualysPasswordParamName'];",
-                        "\n","    qualysOptionId = event['qualysOptionIdParamName'];",
+                        "\n","    qualysVmOptionId = event['qualysVmOptionIdParamName'];",
                         "\n","    qualysScannerName = event['qualysScannerParamName'];",
                         "\n","    qualysApiUrl = event['qualysApiUrlParamName'];",
                         "\n","    instanceType = event['instanceType'];",
@@ -2599,7 +2805,7 @@
                         "\n","    print(\"Instances created \"+instanceIDs)",
                         "\n","    instanceID = instanceIDs.split(',')",
                         "\n","    for id in instanceID:",
-                        "\n","        ssm.start_automation_execution(DocumentName='",{"Ref":"RunContinuousInspection"},"', Parameters={'instanceIDs': [id], 'QualysUsername':[qualysUsername], 'QualysPassword':[qualysPassword], 'QualysOptionId':[qualysOptionId], 'QualysScannerName':[qualysScannerName], 'QualysApiUrl': [qualysApiUrl]})",
+                        "\n","        ssm.start_automation_execution(DocumentName='",{"Ref":"RunContinuousInspection"},"', Parameters={'instanceIDs': [id], 'QualysUsername':[qualysUsername], 'QualysPassword':[qualysPassword], 'QualysVmOptionId':[qualysVmOptionId], 'QualysScannerName':[qualysScannerName], 'QualysApiUrl': [qualysApiUrl]})",
                         "\n","    millis = int(round(time.time() * 1000))",
                         "\n","    return 'Assessment started'"
 
@@ -2626,7 +2832,7 @@
         },
 
        "GoldenAMIAutomationDoc": {
-            "Description": "The Name of the document that creates Golden AMI and executes Inspector.",
+            "Description": "The Name of the document that creates Golden AMI and executes Qualys accessment.",
             "Value": {
                 "Ref": "GoldenAMIAutomationDoc"
             }
