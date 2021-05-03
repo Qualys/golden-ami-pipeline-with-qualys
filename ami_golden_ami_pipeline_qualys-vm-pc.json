@@ -6,7 +6,7 @@
 
       "qualysUsername": {
              "Type": "String",
-             "Default": "<ENTER QUALYS USERNAME>",
+             "Default": "xxxxxxx",
              "Description": "Please enter the qualys Username for the Qualys agent which will be installed on your AMI for assessment. You get to override this later by editing the SSM parameter "
            },
 
@@ -18,36 +18,36 @@
             },
       "qualysEc2Connector": {
               "Type": "String",
-              "Default": "<ENTER QUALYS EC2 CONNECTOR NAME>",
+              "Default": "xxxxx",
               "Description": "Please enter the Qualys EC2 Connector Name for the AWS account that will be used for the Golden AMI Pipeline VPC "
             },
       "qualysEc2ConnectorId": {
               "Type": "String",
-              "Default": "<ENTER QUALYS EC2 CONNECTOR ID>",
+              "Default": "11111",
               "Description": "Please enter the Qualys EC2 Connector ID for the AWS account that will be used for the Golden AMI Pipeline VPC "
             },
 
       "sshKeyName": {
               "Type": "String",
-              "Default": "<ENTER SSH KEY NAME>",
+              "Default": "xxxxxx",
               "Description": "Please enter the SSH Key name that will be used for the Golden AMI Pipeline VPC and Qualys authentication record"
             },
 
       "qualysScanner": {
                 "Type": "String",
-                "Default": "<ENTER QUALYS SCANNER NAME>",
+                "Default": "GAP_AWS_Scanner_xxxx",
                 "Description": "Please enter the qualys Scanner Name for the Qualys agent which will be installed on your AMI for assessment. You get to override this later by editing the SSM parameter "
               },
 
       "qualysVmOptionId": {
                  "Type": "String",
-                 "Default": "<ENTER QUALYS VM OPTION ID>",
+                 "Default": "xxxxxx",
                  "Description": "Please enter the VM Option Profile ID used for running the Qualys Vulnerability assessment. You get to override this later by editing the SSM parameter "
                },
 
       "qualysRunPcScan": {
                 "Type": "String",
-                "Default": "YES",
+                "Default": "NO",
                 "Description": "Please specify whether to run Qualys Compliance Scans in your Golden AMI Pipeline, if YES, then you must specify a PC Option ID. You get to override this later by editing the SSM parameter ",
                 "AllowedValues": [
                   "YES",
@@ -57,18 +57,18 @@
 
       "qualysPCOptionId": {
                 "Type": "String",
-                "Default": "<ENTER QUALYS PC OPTION ID>",
+                "Default": "xxxxxxx",
                 "Description": "Please enter the Qualys PC OptionId for the Qualys agent which will be installed on your AMI for assessment. You get to override this later by editing the SSM parameter "
                },
 
       "qualysParentTagId": {
                 "Type": "String",
-                "Default": "<ENTER QUALYS Parent Tag ID>",
+                "Default": "xxxxxxxx",
                 "Description": "Please enter the Qualys Parent Tag ID for the Golden AMI Pipeline Parent Tag in Qualys Asset View "
                },
 
       "qualysApiUrl": {
-        "Default": "<ENTER QUALYS API URL>",
+        "Default": "https://qualysapi.qg2.apps.qualys.com",
         "Description": "Your Qualys URL for accessing API",
         "Type": "String"
         },
@@ -123,13 +123,13 @@
 
       "ApproverUserIAMARN": {
             "Type": "String",
-            "Default": "",
+            "Default": "arn:aws:iam::111111111111:role/ReadOnlyIAM",
             "Description": "IAM ARN of the Golden AMI approver. The approver must have AmazonSSMAutomationApproverAccess policy associated with it's IAM Profile ."
         },
 
       "EmailID": {
             "Type": "String",
-            "Default": "myemail@mycompany.com",
+            "Default": "johndoe@example.com",
             "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
             "Description": "Your email ID for receiving Qualys assessment results and golden AMI creation notification."
 
@@ -138,7 +138,7 @@
       "instanceType":
             {
                "Type": "String",
-            "Default": "t2.large",
+            "Default": "t2.small",
             "Description": "Specify the the InstanceType compatible with all your golden AMIs. This InstanceType will be used for launching continuous vulnerability assessment of golden AMIs."
                 },
 
@@ -160,27 +160,27 @@
                "Description": "Cross account role suffix for managing Golden AMI metadata Parameters in child account(s). This role needs to exist in each account specified in MetadataJSON parameter."
             },
       "qualysActivationID": {
-        "Default": "<ENTER CLOUD AGENT ACTIVATION ID>",
+        "Default": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         "Description": "Your Qualys Cloud Agent Activation ID",
         "Type": "String"
         },
       "qualysCustomerID": {
-        "Default": "<ENTER CLOUD AGENT CUSTOMER ID>",
+        "Default": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         "Description": "Your Qualys Cloud Agent Customer ID",
         "Type": "String"
         },
       "qualysAgentLocationWindows": {
-        "Default": "<ENTER URL FOR QCA WINDOWS AGENT>",
+        "Default": "",
         "Description": "(Optional) Enter FQDN or full path of Windows Qualys Cloud Agent Installer's location",
         "Type": "String"
         },
       "qualysAgentLocationDebian": {
-        "Default": "<ENTER URL FOR QCA DEBIAN AGENT>",
+        "Default": "",
         "Description": "(Optional) Enter FQDN or full path of Debian Qualys Cloud Agent Installer's location",
         "Type": "String"
         },
       "qualysAgentLocationRPM": {
-        "Default": "<ENTER URL FOR QCA RPM AGENT>",
+        "Default": "",
         "Description": "(Optional) Enter FQDN or full path of RPM Qualys Cloud Agent Installer's location",
         "Type": "String"
         },
@@ -1386,8 +1386,584 @@
                       ]
                   }
               },
+        
+        "GoldenAMIAutomationDocforLinux": {
+                "Type": "AWS::SSM::Document",
+                "Properties": {
+                    "DocumentType": "Automation",
+                    "Content": {
+                        "description": "This automation document triggers Golden AMI creation workflow.",
+                        "schemaVersion": "0.3",
+                        "assumeRole": {
+                            "Fn::GetAtt": [
+                                "AutomationServiceRole",
+                                "Arn"
+                            ]
+                        },
+                        "parameters": {
+                            "sourceAMIid": {
+                                "type": "String",
+                                "description": "Source/Base AMI to be used for generating your golden AMI",
+                                "default": "<ENTER AMI ID>"
+                            },
 
-      "GoldenAMIAutomationDoc": {
+                            "QualysUsername": {
+                              "default": "/GoldenAMI/Qualys/QualysUsername",
+                              "description": "SSM parameter name of Qualys username to access API",
+                              "type": "String"
+                            },
+
+                            "QualysPassword": {
+                              "default": "/GoldenAMI/Qualys/QualysPassword",
+                              "description": "SSM parameter name of the Qualys password to access API",
+                              "type": "String"
+                            },
+
+                            "QualysScannerName": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysScannerName}}",
+                              "description": "Scanner name for launching Qualys VM Scan",
+                              "type": "String"
+                            },
+
+                            "Ec2ConnectorName": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysEc2ConnectorName}}",
+                              "description": "Connector name for launching Qualys EC2 Vulnerability Scan",
+                              "type": "String"
+                            },
+
+                            "Ec2ConnectorId": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysEc2ConnectorId}}",
+                              "description": "Connector ID for launching Qualys EC2 Scan",
+                              "type": "String"
+                            },
+
+                            "SshKeyName": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/SSHKeyName}}",
+                              "description": "SSH Key for Qualys Authentication Record",
+                              "type": "String"
+                            },
+
+                            "QualysVmOptionId": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysVmOptionId}}",
+                              "description": "Option ID for launching Qualys VM Scan",
+                              "type": "String"
+                            },
+
+                            "QualysRunPcScan": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysRunPcScan}}",
+                              "description": "Enable Qualys PC Scan for GAP",
+                              "type": "String"
+                            },
+
+                            "QualysPCOptionId": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysPCOptionId}}",
+                              "description": "Option ID for launching Qualys PC Scan",
+                              "type": "String"
+                            },
+
+                            "QualysQcaActivationID": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysQcaActivationID}}",
+                              "description": "SSM Parameter for Qualys QCA Activation ID",
+                              "type": "String"
+                            },
+
+                            "QualysQcaCustomerID": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysQcaCustomerID}}",
+                              "description": "SSM Parameter for Qualys QCA Customer ID",
+                              "type": "String"
+                            },
+
+                            "QualysAgentLocationDebian": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationDebian}}",
+                              "description": "SSM Parameter for Debian Qualys Cloud Agent Installer's location",
+                              "type": "String"
+                            },
+
+                            "QualysAgentLocationRPM": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationRPM}}",
+                              "description": "SSM Parameter for of RPM Qualys Cloud Agent Installer's location",
+                              "type": "String"
+                            },
+
+                            "QualysQcaLogLevel": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysQcaLogLevel}}",
+                              "description": "SSM Parameter for Qualys Cloud Agent Log Level",
+                              "type": "String"
+                            },
+
+                            "QualysApiUrl": {
+                              "type": "String",
+                              "description": "Your Qualys URL for accessing API",
+                              "default": {
+                                  "Ref": "qualysApiUrl"
+                                }
+                            },
+
+                            "QualysParentTagId": {
+                              "default": "{{ssm:/GoldenAMI/Qualys/QualysParentTagId}}",
+                              "description": "SSM parameter for the Qualys Parent Tag ID",
+                              "type": "String"
+                            },
+
+                            "productName": {
+                                "type": "String",
+                                "description": "The syntax of this parameter is ProductName-ProductVersion.",
+                                "default": {
+                                    "Ref": "productName"
+                              }
+                            },
+
+                            "productOSAndVersion": {
+                                "type": "String",
+                                "description": "The syntax of this parameter is OSName-OSVersion",
+                                "default": {
+                                    "Ref": "productOSAndVersion"
+                                }
+                              },
+
+                            "AMIVersion": {
+                                "type": "String",
+                                "description": "Golden AMI Build version number to be created.",
+                                "default": {
+                                    "Ref": "buildVersion"
+                                }
+                              },
+
+                            "subnetId": {
+                                "type": "String",
+                                "default":{
+                                    "Ref": "subnetPublic"
+                                },
+                                "description": "Subnet in which instances will be launched."
+                            },
+
+                            "securityGroupId": {
+                                "type": "String",
+                                "default":{
+                                    "Ref": "secGroup"
+                                },
+                                "description": "Security Group that will be attached to the instance. By Default a security group without any inbound access is attached"
+                            },
+
+                            "instanceType": {
+                                "type": "String",
+                                "description": "A compatible instance-type for launching an instance",
+                                "default": {
+                                    "Ref": "instanceType"
+                                }
+                            },
+
+                            "targetAMIname": {
+                                "type": "String",
+                                "description": "Name for the golden AMI to be created",
+                                "default": "{{productName}}-{{productOSAndVersion}}-{{AMIVersion}}"
+                              },
+
+                            "ApproverUserIAMARN": {
+                                "type": "String",
+                                "description": "IAM ARN of the user who has SSM approval permissions.",
+                                "default": {
+                                    "Ref": "ApproverUserIAMARN"
+                                }
+                              },
+
+                            "ApproverNotificationArn": {
+                                "type": "String",
+                                "description": "SNS Topic ARN on which a notification would be published once the golden AMI candidate is ready for validation.",
+                                "default": {
+                                    "Ref": "ApproverNotification"
+                                }
+                            },
+
+                            "ManagedInstanceProfile": {
+                                "type": "String",
+                                "description": "Instance Profile. Do not change the default value.",
+                                "default": {
+                                    "Ref": "ManagedInstanceProfile"
+                                }
+                            },
+
+                            "SSMInstallationUserData": {
+                                "type": "String",
+                                "description": "Base64 encoded SSM installation user-data.",
+                                "default": "IyEvYmluL2Jhc2gNCg0KZnVuY3Rpb24gZ2V0X2NvbnRlbnRzKCkgew0KICAgIGlmIFsgLXggIiQod2hpY2ggY3VybCkiIF07IHRoZW4NCiAgICAgICAgY3VybCAtcyAtZiAiJDEiDQogICAgZWxpZiBbIC14ICIkKHdoaWNoIHdnZXQpIiBdOyB0aGVuDQogICAgICAgIHdnZXQgIiQxIiAtTyAtDQogICAgZWxzZQ0KICAgICAgICBkaWUgIk5vIGRvd25sb2FkIHV0aWxpdHkgKGN1cmwsIHdnZXQpIg0KICAgIGZpDQp9DQoNCnJlYWRvbmx5IElERU5USVRZX1VSTD0iaHR0cDovLzE2OS4yNTQuMTY5LjI1NC8yMDE2LTA2LTMwL2R5bmFtaWMvaW5zdGFuY2UtaWRlbnRpdHkvZG9jdW1lbnQvIg0KcmVhZG9ubHkgVFJVRV9SRUdJT049JChnZXRfY29udGVudHMgIiRJREVOVElUWV9VUkwiIHwgYXdrIC1GXCIgJy9yZWdpb24vIHsgcHJpbnQgJDQgfScpDQpyZWFkb25seSBERUZBVUxUX1JFR0lPTj0idXMtZWFzdC0xIg0KcmVhZG9ubHkgUkVHSU9OPSIke1RSVUVfUkVHSU9OOi0kREVGQVVMVF9SRUdJT059Ig0KDQpyZWFkb25seSBTQ1JJUFRfTkFNRT0iYXdzLWluc3RhbGwtc3NtLWFnZW50Ig0KIFNDUklQVF9VUkw9Imh0dHBzOi8vYXdzLXNzbS1kb3dubG9hZHMtJFJFR0lPTi5zMy5hbWF6b25hd3MuY29tL3NjcmlwdHMvJFNDUklQVF9OQU1FIg0KDQppZiBbICIkUkVHSU9OIiA9ICJjbi1ub3J0aC0xIiBdOyB0aGVuDQogIFNDUklQVF9VUkw9Imh0dHBzOi8vYXdzLXNzbS1kb3dubG9hZHMtJFJFR0lPTi5zMy5jbi1ub3J0aC0xLmFtYXpvbmF3cy5jb20uY24vc2NyaXB0cy8kU0NSSVBUX05BTUUiDQpmaQ0KDQppZiBbICIkUkVHSU9OIiA9ICJ1cy1nb3Ytd2VzdC0xIiBdOyB0aGVuDQogIFNDUklQVF9VUkw9Imh0dHBzOi8vYXdzLXNzbS1kb3dubG9hZHMtJFJFR0lPTi5zMy11cy1nb3Ytd2VzdC0xLmFtYXpvbmF3cy5jb20vc2NyaXB0cy8kU0NSSVBUX05BTUUiDQpmaQ0KDQpjZCAvdG1wDQpGSUxFX1NJWkU9MA0KTUFYX1JFVFJZX0NPVU5UPTMNClJFVFJZX0NPVU5UPTANCg0Kd2hpbGUgWyAkUkVUUllfQ09VTlQgLWx0ICRNQVhfUkVUUllfQ09VTlQgXSA7IGRvDQogIGVjaG8gQVdTLVVwZGF0ZUxpbnV4QW1pOiBEb3dubG9hZGluZyBzY3JpcHQgZnJvbSAkU0NSSVBUX1VSTA0KICBnZXRfY29udGVudHMgIiRTQ1JJUFRfVVJMIiA+ICIkU0NSSVBUX05BTUUiDQogIEZJTEVfU0laRT0kKGR1IC1rIC90bXAvJFNDUklQVF9OQU1FIHwgY3V0IC1mMSkNCiAgZWNobyBBV1MtVXBkYXRlTGludXhBbWk6IEZpbmlzaGVkIGRvd25sb2FkaW5nIHNjcmlwdCwgc2l6ZTogJEZJTEVfU0laRQ0KICBpZiBbICRGSUxFX1NJWkUgLWd0IDAgXTsgdGhlbg0KICAgIGJyZWFrDQogIGVsc2UNCiAgICBpZiBbWyAkUkVUUllfQ09VTlQgLWx0IE1BWF9SRVRSWV9DT1VOVCBdXTsgdGhlbg0KICAgICAgUkVUUllfQ09VTlQ9JCgoUkVUUllfQ09VTlQrMSkpOw0KICAgICAgZWNobyBBV1MtVXBkYXRlTGludXhBbWk6IEZpbGVTaXplIGlzIDAsIHJldHJ5Q291bnQ6ICRSRVRSWV9DT1VOVA0KICAgIGZpDQogIGZpIA0KZG9uZQ0KDQppZiBbICRGSUxFX1NJWkUgLWd0IDAgXTsgdGhlbg0KICBjaG1vZCAreCAiJFNDUklQVF9OQU1FIg0KICBlY2hvIEFXUy1VcGRhdGVMaW51eEFtaTogUnVubmluZyBVcGRhdGVTU01BZ2VudCBzY3JpcHQgbm93IC4uLi4NCiAgLi8iJFNDUklQVF9OQU1FIiAtLXJlZ2lvbiAiJFJFR0lPTiINCmVsc2UNCiAgZWNobyBBV1MtVXBkYXRlTGludXhBbWk6IFVuYWJsZSB0byBkb3dubG9hZCBzY3JpcHQsIHF1aXR0aW5nIC4uLi4NCmZp"
+                              },
+
+                            "PreUpdateScript": {
+                                "type": "String",
+                                "description": "(Optional) URL of a script to run before updates are applied. Default (\"none\") is to not run a script.",
+                                "default": "none"
+                            },
+
+                            "PostUpdateScript": {
+                                "type": "String",
+                                "description": "(Optional) URL of a script to run after package updates are applied. Default (\"none\") is to not run a script.",
+                                "default": "none"
+                            },
+
+                            "IncludePackages": {
+                                "type": "String",
+                                "description": "(Optional) Only update these named packages. By default (\"all\"), all available updates are applied.",
+                                "default": "all"
+                            },
+
+                            "ExcludePackages": {
+                                "type": "String",
+                                "description": "(Optional) Names of packages to hold back from updates, under all conditions. By default (\"none\"), no package is excluded.",
+                                "default": "none"
+                            }
+
+                        },
+                        "mainSteps": [
+                            {
+                                "name": "startInstances",
+                                "action": "aws:runInstances",
+                                "timeoutSeconds": 3600,
+                                "maxAttempts": 1,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "ImageId": "{{ sourceAMIid }}",
+                                    "InstanceType": "{{instanceType}}",
+                                    "MinInstanceCount": 1,
+                                    "MaxInstanceCount": 1,
+                                    "KeyName": "{{ SshKeyName }}",
+                                    "SubnetId": "{{ subnetId }}",
+                                    "SecurityGroupIds": [
+                                        "{{ securityGroupId }}"
+                                    ],
+                                    "UserData": "{{SSMInstallationUserData}}",
+                                    "IamInstanceProfileName": "{{ ManagedInstanceProfile }}"
+                                }
+                            },
+                            {
+                                "name": "updateOSSoftware",
+                                "action": "aws:runCommand",
+                                "maxAttempts": 3,
+                                "timeoutSeconds": 3600,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "DocumentName": "AWS-RunShellScript",
+                                    "InstanceIds": [
+                                        "{{startInstances.InstanceIds}}"
+                                    ],
+                                    "Parameters": {
+                                        "commands": [
+                                            "set -e",
+                                            "[ -x \"$(which wget)\" ] && get_contents='wget $1 -O -'",
+                                            "[ -x \"$(which curl)\" ] && get_contents='curl -s -f $1'",
+                                            "eval $get_contents https://aws-ssm-downloads-{{global:REGION}}.s3.amazonaws.com/scripts/aws-update-linux-instance > /tmp/aws-update-linux-instance",
+                                            "chmod +x /tmp/aws-update-linux-instance",
+                                            "/tmp/aws-update-linux-instance --pre-update-script '{{PreUpdateScript}}' --post-update-script '{{PostUpdateScript}}' --include-packages '{{IncludePackages}}' --exclude-packages '{{ExcludePackages}}' 2>&1 | tee /tmp/aws-update-linux-instance.log"
+                                        ]
+                                    }
+                                }
+                            },
+
+                            {
+                                "action": "aws:runCommand",
+                                "name": "InstallQualysCloudAgentOnLinux",
+                                "timeoutSeconds": 600,
+                                "inputs": {
+                                  "Parameters": {
+                                    "commands": [
+                                      "#!/bin/bash",
+                                      "#set -eux",
+                                      "#Check Whether the Qualys Cloud Agent is already installed",
+                                      "status=$( sudo service qualys-cloud-agent status | grep Active )",
+                                      "if [[ -z \"$status\" ]]; then",
+                                      " # Check whether the OS is Debian or RPM based Linux and set the download location",
+                                      " os=$( grep -Ei 'debian|ubuntu|mint' /etc/*release )",
+                                      " if [[ \"$os\" || -f \"/etc/debian_version\" ]]; then",
+                                      "   INSTALLER_FILE_URL={{ QualysAgentLocationDebian }}",
+                                      "   opersys=\"DEB\"",
+                                      " else",
+                                      "   INSTALLER_FILE_URL={{ QualysAgentLocationRPM }}",
+                                      "   opersys=\"RPM\"",
+                                      " fi",
+                                      "   echo $opersys",
+                                      "   echo $INSTALLER_FILE_URL",
+                                      " # Checks whether agent location is a FQDN or full path and invoke download or copy function ",
+                                      " if [[ -n \"$INSTALLER_FILE_URL\" ]]; then",
+                                      "   if [[ \"${INSTALLER_FILE_URL:0:4}\" == 'http' ]]; then",
+                                      "     curl -s -o qualys-cloud-agent.x86_64 ${INSTALLER_FILE_URL}",
+                                      "     rpm -qip qualys-cloud-agent.x86_64",
+                                      "     if [[ $? != 0 ]]; then",
+                                      "       echo \"Failed to download installer from ${INSTALLER_FILE_URL} - Please check file source URL or ACL\"",
+                                      "       exit 3",
+                                      "     fi",
+                                      "   else",
+                                      "     cp $INSTALLER_FILE_URL qualys-cloud-agent.x86_64 ",
+                                      "   fi",
+                                      " else",
+                                      "   echo \"No installation path specified for Qualys Cloud Agent\"",
+                                      "   exit 4",
+                                      " fi",
+                                      " if [ \"$opersys\" = \"RPM\" ]; then",
+                                      "   sleep 5",
+                                      "   rpm -ivh ./qualys-cloud-agent.x86_64",
+                                      "   sleep 5",
+                                      "   sudo service qualys-cloud-agent stop",
+                                      "   sleep 5",
+                                      "   sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh LogLevel={{ QualysQcaLogLevel }} ActivationId={{ QualysQcaActivationID }} CustomerId={{ QualysQcaCustomerID }}",
+                                      " fi",
+                                      " if [ \"$opersys\" = \"DEB\" ]; then",
+                                      "   sudo dpkg --install ./qualys-cloud-agent.x86_64",
+                                      "   sleep 5",
+                                      "   sudo service qualys-cloud-agent stop",
+                                      "   sleep 5",
+                                      "   sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh LogLevel={{ QualysQcaLogLevel }} ActivationId={{ QualysQcaActivationID }} CustomerId={{ QualysQcaCustomerID }}",
+                                      "   sleep 5",
+                                      " fi",
+                                      "else",
+                                      "echo \"QualysCloudAgent is already installed on this and running\"",
+                                      "fi"
+                                    ]
+                                  },
+                                "InstanceIds": [
+                                  "{{startInstances.InstanceIds}}"
+                                ],
+                                "DocumentName": "AWS-RunShellScript"
+                            }
+                              },
+                              {
+                                "name": "stopInstance",
+                                "action": "aws:changeInstanceState",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "InstanceIds": [
+                                        "{{ startInstances.InstanceIds }}"
+                                    ],
+                                    "DesiredState": "stopped"
+                                }
+                            },
+                            {
+                                "name": "createImage",
+                                "action": "aws:createImage",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Continue",
+                                "inputs": {
+                                    "InstanceId": "{{ startInstances.InstanceIds }}",
+                                    "ImageName": "{{ targetAMIname }}",
+                                    "NoReboot": true,
+                                    "ImageDescription": "AMI created by EC2 Automation"
+                                }
+                            },
+                            {
+                                "name": "TagTheAMI",
+                                "action": "aws:createTags",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Continue",
+                                "inputs": {
+                                    "ResourceType": "EC2",
+                                    "ResourceIds": [
+                                        "{{ createImage.ImageId }}"
+                                    ],
+                                    "Tags": [
+                                        {
+                                            "Key": "ProductOSAndVersion",
+                                            "Value": "{{productOSAndVersion}}"
+                                        },
+                                        {
+                                            "Key": "ProductName",
+                                            "Value": "{{productName}}"
+                                        },
+                                        {
+                                            "Key": "version",
+                                            "Value": "{{AMIVersion}}"
+                                        },
+                                        {
+                                            "Key": "AMI-Type",
+                                            "Value": "Golden"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "name": "terminateFirstInstance",
+                                "action": "aws:changeInstanceState",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Continue",
+                                "inputs": {
+                                    "InstanceIds": [
+                                        "{{ startInstances.InstanceIds }}"
+                                    ],
+                                    "DesiredState": "terminated"
+                                }
+                            },
+                            {
+                                "name": "createInstanceFromNewImage",
+                                "action": "aws:runInstances",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "ImageId": "{{ createImage.ImageId }}",
+                                    "InstanceType": "{{instanceType}}",
+                                    "MinInstanceCount": 1,
+                                    "MaxInstanceCount": 1,
+                                    "SubnetId": "{{ subnetId }}",
+                                    "KeyName": "{{ SshKeyName }}",
+                                    "SecurityGroupIds": [
+                                        "{{ securityGroupId }}"
+                                    ],
+                                    "IamInstanceProfileName": "{{ ManagedInstanceProfile }}"
+                                }
+                            },
+                            {
+                              "maxAttempts": 3,
+                              "inputs": {
+                                "Parameters": {
+                                  "commands": [
+                                    "set -e",
+                                    "INSTANCE_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/instance-id')",
+                                    "AMI_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/ami-id')",
+                                    "REGION=\"{{global:REGION}}\"",
+                                    "QualysUsername=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysUsername}} --query 'Parameter.Value' --output text)",
+                                    "QualysPassword=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysPassword}} --query 'Parameter.Value' --output text)",
+                                    "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"{\\\"ServiceRequest\\\":{\\\"data\\\":{\\\"Tag\\\":{\\\"name\\\":\\\"GAP $AMI_ID $INSTANCE_ID\\\",\\\"parentTagId\\\":\\\"{{QualysParentTagId}}\\\",\\\"ruleType\\\":\\\"CLOUD_ASSET\\\",\\\"provider\\\":\\\"EC2\\\",\\\"ruleText\\\":\\\"aws.ec2.imageId:$AMI_ID\\\",\\\"color\\\":\\\"#FFD700\\\"}}}}\" \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag/\" > create-tag-log.txt",
+                                    "sleep 5m",
+                                    "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: text/xml\" -H \"Accept: text/xml\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field=\"tagName\" operator=\"EQUALS\">GAP $AMI_ID $INSTANCE_ID</Criteria></filters></ServiceRequest>\" {{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset ",
+                                    "sleep 5m",
+                                    "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\" > ec2-scan-launch-log.txt",
+                                    "sleep 5m",
+                                    "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\" > vm-scan-launch-log.txt",
+                                    "if [ {{QualysRunPcScan}} == \"YES\" ]; then curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\" > pc-scan-launch-log.txt",
+                                    "fi",
+                                    "sleep 5m"
+                                  ]
+                                },
+                                "InstanceIds": [
+                                  "{{ createInstanceFromNewImage.InstanceIds }}"
+                                ],
+                                "DocumentName": "AWS-RunShellScript"
+                              },
+                              "name": "LaunchQualysAssessment",
+                              "action": "aws:runCommand",
+                              "timeoutSeconds": 3600,
+                              "onFailure": "Abort"
+                            },
+                            {
+                                "name": "sleep2",
+                                "action": "aws:sleep",
+                                "inputs": {
+                                    "Duration": "PT02M"
+                                }
+                            },
+                            {
+                                "name": "TagNewinstance",
+                                "action": "aws:createTags",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Continue",
+                                "inputs": {
+                                    "ResourceType": "EC2",
+                                    "ResourceIds": [
+                                        "{{ createInstanceFromNewImage.InstanceIds }}"
+                                    ],
+                                    "Tags": [
+                                        {
+                                            "Key": "Type",
+                                            "Value": "{{createImage.ImageId}}-{{productOSAndVersion}}/{{productName}}/{{AMIVersion}}"
+                                        },
+                                         {
+                                            "Key": "Automation-Instance-Type",
+                                            "Value": "Golden"
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "name": "StoreVersion",
+                                "action": "aws:invokeLambdaFunction",
+                                "maxAttempts": 3,
+                                "timeoutSeconds": 120,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "FunctionName": { "Ref": "StoreVersionLambdaFunction"},
+                                    "Payload": {
+                                        "Fn::Join": [
+                                            "",
+                                            [
+                                                "{\"AMI-ID\": \"{{createImage.ImageId}}\",\"topicArn\":\"",
+                                                "\",\"instanceId\": \"{{ createInstanceFromNewImage.InstanceIds }}\",\"productOS\": \"{{productOSAndVersion}}\",\"productName\": \"{{productName}}\",\"productVersion\": \"{{AMIVersion}}\"}"
+                                            ]
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "name": "sleep",
+                                "action": "aws:sleep",
+                                "inputs": {
+                                    "Duration": "PT05M"
+                                }
+                            },
+
+
+                            {
+                              "maxAttempts": 1,
+                              "inputs": {
+                                "DesiredState": "terminated",
+                                "InstanceIds": [
+                                  "{{ createInstanceFromNewImage.InstanceIds }}"
+                                ]
+                              },
+                              "name": "terminateQualysInstance",
+                              "action": "aws:changeInstanceState",
+                              "timeoutSeconds": 1200,
+                              "onFailure": "Continue"
+                            },
+                            {
+                                "name": "addNewVersionParameter",
+                                "action": "aws:invokeLambdaFunction",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "FunctionName":{ "Ref": "AppendParamLambda"},
+
+                                    "Payload": "{\"parameterName\":\"/GoldenAMI/{{productOSAndVersion}}/{{productName}}/{{AMIVersion}}\", \"valueToBeCreatedOrAppended\":\"{{createImage.ImageId}}\"}"
+                                }
+                            },
+                            {
+                                "name": "approve",
+                                "action": "aws:approve",
+                                "timeoutSeconds": 172800,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "NotificationArn": "{{ ApproverNotificationArn }}",
+                                    "Message": "Please check your report from Qualys, and decide whether to approve this AMI- {{createImage.ImageId}}, Instance ID {{createInstanceFromNewImage.InstanceIds}}, Qualys Asset Tag: GAP {{createImage.ImageId}} {{createInstanceFromNewImage.InstanceIds}}",
+                                    "MinRequiredApprovals": 1,
+                                    "Approvers": [
+                                        "{{ ApproverUserIAMARN }}"
+                                    ]
+                                }
+                            },
+                             {
+                                "name": "updateLatestVersionValue",
+                                "action": "aws:invokeLambdaFunction",
+                                "timeoutSeconds": 1200,
+                                "maxAttempts": 1,
+                                "onFailure": "Abort",
+                                "inputs": {
+                                    "FunctionName":{ "Ref": "AppendParamLambda"},
+                                    "Payload": "{\"parameterName\":\"/GoldenAMI/latest\", \"valueToBeCreatedOrAppended\":\"{{createImage.ImageId}}\"}"
+                                }
+                            }
+                        ],
+                        "outputs": [
+                            "createImage.ImageId"
+                        ]
+                    }
+                }
+            },
+
+      "GoldenAMIAutomationDocforWindows": {
                   "Type": "AWS::SSM::Document",
                   "Properties": {
                       "DocumentType": "Automation",
@@ -1473,16 +2049,10 @@
                                 "type": "String"
                               },
 
-                              "QualysAgentLocationDebian": {
-                                "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationDebian}}",
-                                "description": "SSM Parameter for Debian Qualys Cloud Agent Installer's location",
-                                "type": "String"
-                              },
-
-                              "QualysAgentLocationRPM": {
-                                "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationRPM}}",
-                                "description": "SSM Parameter for of RPM Qualys Cloud Agent Installer's location",
-                                "type": "String"
+                              "QualysAgentLocationWindows":{
+                                  "default": "{{ssm:/GoldenAMI/Qualys/QualysAgentLocationWindows}}",
+                                  "description": "SSM Paramater for Windows Qualys Cloud Agent Installer's location",
+                                  "type":"String"
                               },
 
                               "QualysQcaLogLevel": {
@@ -1635,94 +2205,78 @@
                                       "IamInstanceProfileName": "{{ ManagedInstanceProfile }}"
                                   }
                               },
-                              {
-                                  "name": "updateOSSoftware",
-                                  "action": "aws:runCommand",
-                                  "maxAttempts": 3,
-                                  "timeoutSeconds": 3600,
-                                  "onFailure": "Abort",
-                                  "inputs": {
-                                      "DocumentName": "AWS-RunShellScript",
-                                      "InstanceIds": [
-                                          "{{startInstances.InstanceIds}}"
-                                      ],
-                                      "Parameters": {
-                                          "commands": [
-                                              "set -e",
-                                              "[ -x \"$(which wget)\" ] && get_contents='wget $1 -O -'",
-                                              "[ -x \"$(which curl)\" ] && get_contents='curl -s -f $1'",
-                                              "eval $get_contents https://aws-ssm-downloads-{{global:REGION}}.s3.amazonaws.com/scripts/aws-update-linux-instance > /tmp/aws-update-linux-instance",
-                                              "chmod +x /tmp/aws-update-linux-instance",
-                                              "/tmp/aws-update-linux-instance --pre-update-script '{{PreUpdateScript}}' --post-update-script '{{PostUpdateScript}}' --include-packages '{{IncludePackages}}' --exclude-packages '{{ExcludePackages}}' 2>&1 | tee /tmp/aws-update-linux-instance.log"
-                                          ]
-                                      }
-                                  }
-                              },
-
+                            
                               {
                                   "action": "aws:runCommand",
-                                  "name": "InstallQualysCloudAgentOnLinux",
+                                  "name": "InstallQualysCloudAgentOnWindows",
                                   "timeoutSeconds": 600,
                                   "inputs": {
                                     "Parameters": {
                                       "commands": [
-                                        "#!/bin/bash",
-                                        "#set -eux",
-                                        "#Check Whether the Qualys Cloud Agent is already installed",
-                                        "status=$( sudo service qualys-cloud-agent status | grep Active )",
-                                        "if [[ -z \"$status\" ]]; then",
-                                        " # Check whether the OS is Debian or RPM based Linux and set the download location",
-                                        " os=$( grep -Ei 'debian|ubuntu|mint' /etc/*release )",
-                                        " if [[ \"$os\" || -f \"/etc/debian_version\" ]]; then",
-                                        "   INSTALLER_FILE_URL={{ QualysAgentLocationDebian }}",
-                                        "   opersys=\"DEB\"",
-                                        " else",
-                                        "   INSTALLER_FILE_URL={{ QualysAgentLocationRPM }}",
-                                        "   opersys=\"RPM\"",
-                                        " fi",
-                                        "   echo $opersys",
-                                        "   echo $INSTALLER_FILE_URL",
-                                        " # Checks whether agent location is a FQDN or full path and invoke download or copy function ",
-                                        " if [[ -n \"$INSTALLER_FILE_URL\" ]]; then",
-                                        "   if [[ \"${INSTALLER_FILE_URL:0:4}\" == 'http' ]]; then",
-                                        "     curl -s -o qualys-cloud-agent.x86_64 ${INSTALLER_FILE_URL}",
-                                        "     rpm -qip qualys-cloud-agent.x86_64",
-                                        "     if [[ $? != 0 ]]; then",
-                                        "       echo \"Failed to download installer from ${INSTALLER_FILE_URL} - Please check file source URL or ACL\"",
-                                        "       exit 3",
-                                        "     fi",
-                                        "   else",
-                                        "     cp $INSTALLER_FILE_URL qualys-cloud-agent.x86_64 ",
-                                        "   fi",
-                                        " else",
-                                        "   echo \"No installation path specified for Qualys Cloud Agent\"",
-                                        "   exit 4",
-                                        " fi",
-                                        " if [ \"$opersys\" = \"RPM\" ]; then",
-                                        "   sleep 5",
-                                        "   rpm -ivh ./qualys-cloud-agent.x86_64",
-                                        "   sleep 5",
-                                        "   sudo service qualys-cloud-agent stop",
-                                        "   sleep 5",
-                                        "   sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh LogLevel={{ QualysQcaLogLevel }} ActivationId={{ QualysQcaActivationID }} CustomerId={{ QualysQcaCustomerID }}",
-                                        " fi",
-                                        " if [ \"$opersys\" = \"DEB\" ]; then",
-                                        "   sudo dpkg --install ./qualys-cloud-agent.x86_64",
-                                        "   sleep 5",
-                                        "   sudo service qualys-cloud-agent stop",
-                                        "   sleep 5",
-                                        "   sudo /usr/local/qualys/cloud-agent/bin/qualys-cloud-agent.sh LogLevel={{ QualysQcaLogLevel }} ActivationId={{ QualysQcaActivationID }} CustomerId={{ QualysQcaCustomerID }}",
-                                        "   sleep 5",
-                                        " fi",
-                                        "else",
-                                        "echo \"QualysCloudAgent is already installed on this and running\"",
-                                        "fi"
+                                        "function New-TemporaryDirectory {",
+                                        "  $parent = [System.IO.Path]::GetTempPath()",
+                                        "  [string] $name = [System.Guid]::NewGuid()",
+                                        "  New-Item -ItemType Directory -Path (Join-Path $parent $name)",
+                                        "}",
+                                        "$tempdir = New-TemporaryDirectory",
+                                        "Set-Location -Path $tempdir",
+                                        "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls10 -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12",
+                                        "$agentInstaller=\"QualysCloudAgent.exe\"",
+                                        "$agentInstallerlog=Join-Path $tempdir $agentInstaller",
+                                        "if (Get-Service \"QualysAgent\" -ErrorAction SilentlyContinue)",
+                                        "{",
+                                        "  Write-Host \"Qualys Cloud Agent is already installed, Exiting\"",
+                                        "  exit 0",
+                                        "}",
+                                        "#Download the Qualys Cloud agent",
+                                        "function Download_file",
+                                        "{",
+                                        "     Try",
+                                        "     {",
+                                        "         Invoke-WebRequest $installerUrl -OutFile $agentInstallerlog",
+                                        "     }",
+                                        "     Catch",
+                                        "     {",
+                                        "         Write-Host \"Error while downloading installer\"",
+                                        "         Write-Host $_.Exception|format-list -force",
+                                        "         exit 3",
+                                        "     }",
+                                        "}",
+                                        "#Check whether agent location is a FQDN or full path and invoke download or copy function",
+                                        "if ('{{ QualysAgentLocationWindows }}' -ne '')",
+                                        "{",
+                                        "     $installerUrl = '{{ QualysAgentLocationWindows }}'",
+                                        "     if ( $installerUrl.Substring(0,4) -eq 'http')",
+                                        "     {",
+                                        "         Download_file",
+                                        "     }",
+                                        "     Else",
+                                        "     {",
+                                        "         Copy-Item $agentInstallerlog ",
+                                        "     }",
+                                        "}",
+                                        "Else ",
+                                        "{",
+                                        "     Write-Host \"No installation path specified for Qualys Cloud Agent\"",
+                                        "     exit 5",
+                                        "}",
+                                        "# Install the Qualys Cloud Agent",
+                                        "Try",
+                                        "{",
+                                        "     & $agentInstallerlog CustomerId={{ QualysQcaCustomerID }} ActivationId={{ QualysQcaActivationID }}",
+                                        "}",
+                                        "Catch",
+                                        "{",
+                                        "     Write-Host \"Installation failed, exception raised during installation\"",
+                                        "     Write-Host $_.Exception|format-list -force",
+                                        "     exit 6",
+                                        "}"
                                       ]
                                     },
                                   "InstanceIds": [
                                     "{{startInstances.InstanceIds}}"
                                   ],
-                                  "DocumentName": "AWS-RunShellScript"
+                                  "DocumentName": "AWS-RunPowerShellScript"
                                 }
                               },
 
@@ -1820,28 +2374,52 @@
                                 "inputs": {
                                   "Parameters": {
                                     "commands": [
-                                      "set -e",
-                                      "INSTANCE_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/instance-id')",
-                                      "AMI_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/ami-id')",
-                                      "REGION=\"{{global:REGION}}\"",
-                                      "QualysUsername=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysUsername}} --query 'Parameter.Value' --output text)",
-                                      "QualysPassword=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysPassword}} --query 'Parameter.Value' --output text)",
-                                      "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"{\\\"ServiceRequest\\\":{\\\"data\\\":{\\\"Tag\\\":{\\\"name\\\":\\\"GAP $AMI_ID $INSTANCE_ID\\\",\\\"parentTagId\\\":\\\"{{QualysParentTagId}}\\\",\\\"ruleType\\\":\\\"CLOUD_ASSET\\\",\\\"provider\\\":\\\"EC2\\\",\\\"ruleText\\\":\\\"aws.ec2.imageId:$AMI_ID\\\",\\\"color\\\":\\\"#FFD700\\\"}}}}\" \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag/\" > create-tag-log.txt",
-                                      "sleep 5m",
-                                      "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: text/xml\" -H \"Accept: text/xml\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field=\"tagName\" operator=\"EQUALS\">GAP $AMI_ID $INSTANCE_ID</Criteria></filters></ServiceRequest>\" {{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset ",
-                                      "sleep 5m",
-                                      "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\"> ec2-scan-launch-log.txt",
-                                      "sleep 5m",
-                                      "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\"> vm-scan-launch-log.txt",
-                                      "if [ {{QualysRunPcScan}} == \"YES\" ]; then curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\"> pc-scan-launch-log.txt",
-                                      "fi",
-                                      "sleep 10m"
+                                      "function New-TemporaryDirectory {",
+                                      "  $parent = [System.IO.Path]::GetTempPath()",
+                                      "  [string] $name = [System.Guid]::NewGuid()",
+                                      "  New-Item -ItemType Directory -Path (Join-Path $parent $name)",
+                                      "}",
+                                      "$tempdir = New-TemporaryDirectory",
+                                      "Set-Location -Path $tempdir",
+                                      "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls10 -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12",
+                                      "$Instance_Id = Invoke-RestMethod -Method Get -Uri http://169.254.169.254/latest/meta-data/instance-id",
+                                      "$Ami_Id = Invoke-RestMethod -Method Get -Uri http://169.254.169.254/latest/meta-data/ami-id",
+                                      "$REGION=\"{{global:REGION}}\"",
+                                      "$QualysUsername= (Get-SSMParameter -Region $REGION -WithDecryption $true -Name {{QualysUsername}}).Value",
+                                      "$QualysPassword= (Get-SSMParameter -Region $REGION -WithDecryption $true -Name {{QualysPassword}}).Value",
+                                      "$CredentialPair = \"$($QualysUsername):$($QualysPassword)\"",
+                                      "$EncodedCredentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($CredentialPair))",
+                                      "$Headers = @{ Authorization = \"Basic $EncodedCredentials\"}",
+                                      "$Headers.Add(\"X-Requested-With\", \"powershell\")",
+                                      "$Body = @{ServiceRequest=@{data=@{Tag =@{name= \"GAP $Ami_Id $Instance_Id\"",
+                                      "ruleType = \"CLOUD_ASSET\"",
+                                      "provider = \"EC2\"",
+                                      "id = {{QualysParentTagId}}",
+                                      "ruleText = \"aws.ec2.imageId:$Ami_Id\"",
+                                      "color = \"#FF5665\"",
+                                      "}}}}",
+                                      "$JsonBody = $Body | ConvertTo-Json -Depth 5",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag\" -Body $JsonBody -ContentType \"application/json\" -OutFile create-tag-log.txt",
+                                      "Start-Sleep -Seconds 120",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset\" -Body '<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field =\"tagName\" operator=\"EQUALS\">GAP $Ami_Id $Instance_Id</Criteria></filters></ServiceRequest>' -ContentType \"text/xml\"",
+                                      "Start-Sleep -Seconds 120",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\" -ContentType \"application/json\" -OutFile ec2-scan-launch-log.txt",
+                                      "Do {",
+                                      "$Getconnector = Invoke-RestMethod -Method Get -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/get/am/assetdataconnector/{{Ec2ConnectorId}}\"",
+                                      "$ConnectorState = $Getconnector.ServiceResponse.data.AssetDataConnector.connectorState",
+                                      "Start-Sleep -Seconds 60",
+                                      "}while($ConnectorState -eq 'RUNNING' -or $ConnectorState -eq 'PROCESSING' -or $ConnectorState -eq 'QUEUED')",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/api/2.0/fo/scan/\" -Body \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$Instance_Id&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" -OutFile vm-scan-launch-log.txt",
+                                      "Start-Sleep -Seconds 300",
+                                      "if ({{QualysRunPcScan}} -eq 'YES'){",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\" -Body \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$Instance_Id&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" -OutFile pc-scan-launch-log.txt",
+                                      "}"
                                     ]
                                   },
                                   "InstanceIds": [
                                     "{{ createInstanceFromNewImage.InstanceIds }}"
                                   ],
-                                  "DocumentName": "AWS-RunShellScript"
+                                  "DocumentName": "AWS-RunPowerShellScript"
                                 },
                                 "name": "LaunchQualysAssessment",
                                 "action": "aws:runCommand",
@@ -1852,7 +2430,7 @@
                                   "name": "sleep2",
                                   "action": "aws:sleep",
                                   "inputs": {
-                                      "Duration": "PT01M"
+                                      "Duration": "PT02M"
                                   }
                               },
                               {
@@ -1901,7 +2479,7 @@
                                   "name": "sleep",
                                   "action": "aws:sleep",
                                   "inputs": {
-                                      "Duration": "PT01M"
+                                      "Duration": "PT70M"
                                   }
                               },
 
@@ -1909,7 +2487,7 @@
                               {
                                 "maxAttempts": 1,
                                 "inputs": {
-                                  "DesiredState": "terminated",
+                                  "DesiredState": "stopped",
                                   "InstanceIds": [
                                     "{{ createInstanceFromNewImage.InstanceIds }}"
                                   ]
@@ -2435,8 +3013,153 @@
                   }
                }
             },
-
-      "RunContinuousInspection":{
+            
+        "RunContinuousInspectionforLinux":{
+                "Type":"AWS::SSM::Document",
+                "Properties":{
+                   "DocumentType":"Automation",
+                   "Content":{
+                      "description":"This automation document is triggered as part of the continuous vulnerability assessment on all active golden AMIs.",
+                      "schemaVersion":"0.3",
+                      "assumeRole":{
+                               "Fn::GetAtt": [
+                                   "AutomationServiceRole",
+                                   "Arn"
+                               ]
+                           },
+                           "parameters": {
+                                 "instanceIDs": {
+                                   "description": "This parameter contains list of instance-ids on which continuous vulnerability assessment is  performed.",
+                                   "type": "String"
+                                 },
+                                 "QualysUsername": {
+                                   "default": "/GoldenAMI/Qualys/QualysUsername",
+                                   "description": "SSM parameter name of Qualys username to access API",
+                                   "type": "String"
+                                 },
+ 
+                                 "QualysPassword": {
+                                   "default": "/GoldenAMI/Qualys/QualysPassword",
+                                   "description": "SSM parameter name of the Qualys password to access API",
+                                   "type": "String"
+                                 },
+                                 "QualysVmOptionId": {
+                                   "default": "/GoldenAMI/Qualys/QualysVmOptionId",
+                                   "description": "SSM parameter name of Qualys option id to start scan to access API",
+                                   "type": "String"
+                                 },
+ 
+                                 "QualysPCOptionId": {
+                                 "default": "{{ssm:/GoldenAMI/Qualys/QualysPCOptionId}}",
+                                 "description": "Option ID for launching Qualys PC Scan",
+                                 "type": "String"
+                                 },
+ 
+                                 "QualysRunPcScan": {
+                                 "default": "{{ssm:/GoldenAMI/Qualys/QualysRunPcScan}}",
+                                 "description": "Enable Qualys PC Scan for GAP",
+                                 "type": "String"
+                                 },
+ 
+                                 "Ec2ConnectorName": {
+                                   "default": "/GoldenAMI/Qualys/QualysEc2ConnectorName",
+                                   "description": "SSM parameter name of Qualys EC2 Connector ID",
+                                   "type": "String"
+                                 },
+ 
+                                 "Ec2ConnectorId": {
+                                   "default": "/GoldenAMI/Qualys/QualysEc2ConnectorId",
+                                   "description": "SSM parameter name of Qualys EC2 Connector ID",
+                                   "type": "String"
+                                 },
+ 
+                                 "QualysScannerName": {
+                                   "default": "/GoldenAMI/Qualys/QualysScannerName",
+                                   "description": "SSM parameter name of the Qualys scanner to launch VM scan",
+                                   "type": "String"
+                                 },
+ 
+                                 "QualysParentTagId": {
+                                   "default": "/GoldenAMI/Qualys/QualysParentTagId",
+                                   "description": "SSM parameter Qualys Parent Tag ID",
+                                   "type": "String"
+                                 },
+ 
+                                 "QualysApiUrl": {
+                                   "type": "String",
+                                   "description": "Your Qualys URL for accessing API",
+                                   "default": {
+                                     "Ref":"qualysApiUrl"
+                                   }
+                                 }
+                               },
+ 
+                      "mainSteps":[
+                         {
+                            "name":"waitForInstance",
+                            "action":"aws:sleep",
+                            "inputs":{
+                               "Duration":"PT04M"
+                            }
+                          },
+                          {
+                           "maxAttempts": 1,
+                           "inputs": {
+                             "Parameters": {
+                               "commands": [
+                                 "set -e",
+                                 "INSTANCE_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/instance-id')",
+                                 "AMI_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/ami-id')",
+                                 "REGION=\"{{global:REGION}}\"",
+                                 "QualysUsername=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysUsername}} --query 'Parameter.Value' --output text)",
+                                 "QualysPassword=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysPassword}} --query 'Parameter.Value' --output text)",
+                                 "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"{\\\"ServiceRequest\\\":{\\\"data\\\":{\\\"Tag\\\":{\\\"name\\\":\\\"GAP $AMI_ID $INSTANCE_ID\\\",\\\"parentTagId\\\":\\\"{{QualysParentTagId}}\\\",\\\"ruleType\\\":\\\"CLOUD_ASSET\\\",\\\"provider\\\":\\\"EC2\\\",\\\"ruleText\\\":\\\"aws.ec2.imageId:$AMI_ID\\\",\\\"color\\\":\\\"#FFD700\\\"}}}}\" \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag/\" > create-tag-log.txt",
+                                 "sleep 2m",
+                                 "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: text/xml\" -H \"Accept: text/xml\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field=\"tagName\" operator=\"EQUALS\">GAP $AMI_ID $INSTANCE_ID</Criteria></filters></ServiceRequest>\" {{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset ",
+                                 "sleep 2m",
+                                 "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\" > ec2-scan-launch-log.txt",
+                                 "sleep 5m",
+                                 "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+$AMI_ID&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\" > vm-scan-launch-log.txt",
+                                 "if [ {{QualysRunPcScan}} == \"YES\" ]; then curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+$AMI_ID&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\" > pc-scan-launch-log.txt",
+                                 "fi",
+                                 "sleep 5m"
+                               ]
+                             },
+                             "InstanceIds": [
+                               "{{instanceIDs}}"
+                             ],
+                             "DocumentName": "AWS-RunShellScript"
+                           },
+                           "name": "LaunchQualysAssessment",
+                           "action": "aws:runCommand",
+                           "timeoutSeconds": 3600,
+                           "onFailure": "Abort"
+                         },
+                         {
+                            "name":"waitForAssessment",
+                            "action":"aws:sleep",
+                            "inputs":{
+                               "Duration":"PT05M"
+                            }
+                          },
+                          {
+                              "name": "stopAssessmentInstance",
+                              "action": "aws:changeInstanceState",
+                              "timeoutSeconds": 1200,
+                              "maxAttempts": 1,
+                              "onFailure": "Continue",
+                              "inputs": {
+                                  "InstanceIds": [
+                                      "{{instanceIDs}}"
+                                  ],
+                                  "DesiredState": "stopped"
+                              }
+                          }
+                      ]
+                   }
+                }
+             },
+      "RunContinuousInspectionforWindows":{
                "Type":"AWS::SSM::Document",
                "Properties":{
                   "DocumentType":"Automation",
@@ -2521,7 +3244,7 @@
                            "name":"waitForInstance",
                            "action":"aws:sleep",
                            "inputs":{
-                              "Duration":"PT01M"
+                              "Duration":"PT04M"
                            }
                          },
                          {
@@ -2529,28 +3252,53 @@
                           "inputs": {
                             "Parameters": {
                               "commands": [
-                                "set -e",
-                                "INSTANCE_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/instance-id')",
-                                "AMI_ID=$(curl -s 'http://169.254.169.254/latest/meta-data/ami-id')",
-                                "REGION=\"{{global:REGION}}\"",
-                                "QualysUsername=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysUsername}} --query 'Parameter.Value' --output text)",
-                                "QualysPassword=$(aws ssm get-parameter --with-decryption --region $REGION --name {{QualysPassword}} --query 'Parameter.Value' --output text)",
-                                "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"{\\\"ServiceRequest\\\":{\\\"data\\\":{\\\"Tag\\\":{\\\"name\\\":\\\"GAP $AMI_ID $INSTANCE_ID\\\",\\\"parentTagId\\\":\\\"{{QualysParentTagId}}\\\",\\\"ruleType\\\":\\\"CLOUD_ASSET\\\",\\\"provider\\\":\\\"EC2\\\",\\\"ruleText\\\":\\\"aws.ec2.imageId:$AMI_ID\\\",\\\"color\\\":\\\"#FFD700\\\"}}}}\" \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag/\" > create-tag-log.txt",
-                                "sleep 5m",
-                                "curl -H \"X-Requested-With: Curl\" -H \"Content-Type: text/xml\" -H \"Accept: text/xml\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field=\"tagName\" operator=\"EQUALS\">GAP $AMI_ID $INSTANCE_ID</Criteria></filters></ServiceRequest>\" {{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset ",
-                                "sleep 5m",
-                                "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\"> ec2-scan-launch-log.txt",
-                                "sleep 5m",
-                                "curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/\" > vm-scan-launch-log.txt",
-                                "if [ {{QualysRunPcScan}} == \"YES\" ]; then curl -H \"X-Requested-With: Curl\" -u \"$QualysUsername:$QualysPassword\" -X \"POST\" -d \"action=launch&scan_title=CANDIDATE+AMI+Scan+{{createImage.ImageId}}&ec2_instance_ids=$INSTANCE_ID&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\" > pc-scan-launch-log.txt",
-                                "fi",
-                                "sleep 10m"
+                                "function New-TemporaryDirectory {",
+                                      "  $parent = [System.IO.Path]::GetTempPath()",
+                                      "  [string] $name = [System.Guid]::NewGuid()",
+                                      "  New-Item -ItemType Directory -Path (Join-Path $parent $name)",
+                                      "}",
+                                      "$tempdir = New-TemporaryDirectory",
+                                      "Set-Location -Path $tempdir",
+                                      "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls10 -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12",
+                                      "$Instance_Id = Invoke-RestMethod -Method Get -Uri http://169.254.169.254/latest/meta-data/instance-id",
+                                      "$Ami_Id = Invoke-RestMethod -Method Get -Uri http://169.254.169.254/latest/meta-data/ami-id",
+                                      "$REGION=\"{{global:REGION}}\"",
+                                      "$QualysParentTag= (Get-SSMParameter -Region $REGION -WithDecryption $true -Name {{QualysParentTagId}}).Value",
+                                      "$QualysUsername= (Get-SSMParameter -Region $REGION -WithDecryption $true -Name {{QualysUsername}}).Value",
+                                      "$QualysPassword= (Get-SSMParameter -Region $REGION -WithDecryption $true -Name {{QualysPassword}}).Value",
+                                      "$CredentialPair = \"$($QualysUsername):$($QualysPassword)\"",
+                                      "$EncodedCredentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($CredentialPair))",
+                                      "$Headers = @{ Authorization = \"Basic $EncodedCredentials\"}",
+                                      "$Headers.Add(\"X-Requested-With\", \"powershell\")",
+                                      "$Body = @{ServiceRequest=@{data=@{Tag =@{name= \"GAP $Ami_Id $Instance_Id\"",
+                                      "ruleType = \"CLOUD_ASSET\"",
+                                      "provider = \"EC2\"",
+                                      "id = {{QualysParentTagId}}",
+                                      "ruleText = \"aws.ec2.imageId:$Ami_Id\"",
+                                      "color = \"#FF5665\"",
+                                      "}}}}",
+                                      "$JsonBody = $Body | ConvertTo-Json -Depth 5",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/create/am/tag\" -Body $JsonBody -ContentType \"application/json\" -OutFile create-tag-log.txt",
+                                      "Start-Sleep -Seconds 120",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/deactivate/am/asset\" -Body '<?xml version=\"1.0\" encoding=\"UTF-8\" ?><ServiceRequest><filters><Criteria field =\"tagName\" operator=\"EQUALS\">GAP $Ami_Id $Instance_Id</Criteria></filters></ServiceRequest>' -ContentType \"text/xml\"",
+                                      "Start-Sleep -Seconds 120",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/run/am/assetdataconnector/{{Ec2ConnectorId}}\" -ContentType \"application/json\" -OutFile ec2-scan-launch-log.txt",
+                                      "Do {",
+                                      "$Getconnector = Invoke-RestMethod -Method Get -Headers $Headers -Uri \"{{QualysApiUrl}}/qps/rest/2.0/get/am/assetdataconnector/{{Ec2ConnectorId}}\"",
+                                      "$ConnectorState = $Getconnector.ServiceResponse.data.AssetDataConnector.connectorState",
+                                      "Start-Sleep -Seconds 60",
+                                      "}while($ConnectorState -eq 'RUNNING' -or $ConnectorState -eq 'PROCESSING' -or $ConnectorState -eq 'QUEUED')",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/api/2.0/fo/scan/\" -Body \"action=launch&scan_title=CANDIDATE+AMI+Scan+$Ami_Id&ec2_instance_ids=$Instance_Id&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysVmOptionId}}&iscanner_name={{QualysScannerName}}\" -OutFile vm-scan-launch-log.txt",
+                                      "Start-Sleep -Seconds 300",
+                                      "if ({{QualysRunPcScan}} -eq 'YES'){",
+                                      "Invoke-RestMethod -Method Post -Headers $Headers -Uri \"{{QualysApiUrl}}/api/2.0/fo/scan/compliance/\" -Body \"action=launch&scan_title=CANDIDATE+AMI+Scan+$Ami_Id&ec2_instance_ids=$Instance_Id&connector_name={{Ec2ConnectorName}}&ec2_endpoint=$REGION&option_id={{QualysPCOptionId}}&iscanner_name={{QualysScannerName}}\" -OutFile pc-scan-launch-log.txt",
+                                      "}"
                               ]
                             },
                             "InstanceIds": [
                               "{{instanceIDs}}"
                             ],
-                            "DocumentName": "AWS-RunShellScript"
+                            "DocumentName": "AWS-RunPowerShellScript"
                           },
                           "name": "LaunchQualysAssessment",
                           "action": "aws:runCommand",
@@ -2561,7 +3309,7 @@
                            "name":"waitForAssessment",
                            "action":"aws:sleep",
                            "inputs":{
-                              "Duration":"PT01M"
+                              "Duration":"PT70M"
                            }
                          },
                          {
@@ -2581,15 +3329,60 @@
                   }
                }
             },
-
-      "ScheduledRule": {
+        "ScheduledRuleforLinux": {
+                "Type": "AWS::Events::Rule",
+                "Properties": {
+                  "Description": "ScheduledRuleforLinux",
+                  "ScheduleExpression": {"Ref":"continuousInspectionFrequency"},
+                  "State": "ENABLED",
+                  "Targets": [{
+                    "Arn": { "Fn::GetAtt": ["SetupContinuousAssessmentLambdaFunctionforLinux", "Arn"] },
+                    "Id": "TargetFunctionV1",
+                    "Input" :
+                          {"Fn::Join":
+                            [
+                              "",
+                          [
+                           "{\"AMIsParamName\":\"/GoldenAMI/",
+    
+                                   "latest",
+                                   "\", \"instanceType\":\"",
+                                   {"Ref":"instanceType"},
+                            "\",\"qualysUserParamName\":\"/GoldenAMI/Qualys/QualysUsername",
+                            "\",\"qualysPasswordParamName\":\"/GoldenAMI/Qualys/QualysPassword",
+                            "\",\"qualysScannerParamName\":\"/GoldenAMI/Qualys/QualysScannerName",
+                            "\",\"qualysParentTagIdParamName\":\"/GoldenAMI/Qualys/QualysParentTagId",
+                            "\",\"qualysEc2ConnectorId\":\"/GoldenAMI/Qualys/QualysEc2ConnectorId",
+                            "\",\"qualysEc2ConnectorName\":\"/GoldenAMI/Qualys/QualysEc2ConnectorName",
+                            "\",\"sshKeyParamName\":\"/GoldenAMI/Qualys/SSHKeyName",
+                            "\",\"qualysApiUrlParamName\":\"",
+                              {"Ref":"qualysApiUrl"},
+                            "\",\"qualysVmOptionIdParamName\":\"/GoldenAMI/Qualys/QualysVmOptionId",
+                                   "\"}"
+                            ]
+                         ]
+                      }
+                  }]
+                }
+            },
+    
+          "PermissionForEventsToInvokeLambdaforLinux": {
+                "Type": "AWS::Lambda::Permission",
+                "Properties": {
+                  "FunctionName": { "Ref": "SetupContinuousAssessmentLambdaFunctionforLinux" },
+                  "Action": "lambda:InvokeFunction",
+                  "Principal": "events.amazonaws.com",
+                  "SourceArn": { "Fn::GetAtt": ["ScheduledRuleforLinux", "Arn"] }
+                }
+              },
+      "ScheduledRuleforWindows": {
             "Type": "AWS::Events::Rule",
             "Properties": {
-              "Description": "ScheduledRule",
+              "Description": "ScheduledRuleforWindows",
               "ScheduleExpression": {"Ref":"continuousInspectionFrequency"},
               "State": "ENABLED",
               "Targets": [{
-                "Arn": { "Fn::GetAtt": ["SetupContinuousAssessmentLambdaFunction", "Arn"] },
+                "Arn": { "Fn::GetAtt": ["SetupContinuousAssessmentLambdaFunctionforWindows", "Arn"] },
                 "Id": "TargetFunctionV1",
                 "Input" :
                       {"Fn::Join":
@@ -2604,6 +3397,9 @@
                         "\",\"qualysUserParamName\":\"/GoldenAMI/Qualys/QualysUsername",
                         "\",\"qualysPasswordParamName\":\"/GoldenAMI/Qualys/QualysPassword",
                         "\",\"qualysScannerParamName\":\"/GoldenAMI/Qualys/QualysScannerName",
+                        "\",\"qualysParentTagIdParamName\":\"/GoldenAMI/Qualys/QualysParentTagId",
+                        "\",\"qualysEc2ConnectorId\":\"/GoldenAMI/Qualys/QualysEc2ConnectorId",
+                        "\",\"qualysEc2ConnectorName\":\"/GoldenAMI/Qualys/QualysEc2ConnectorName",
                         "\",\"sshKeyParamName\":\"/GoldenAMI/Qualys/SSHKeyName",
                         "\",\"qualysApiUrlParamName\":\"",
                           {"Ref":"qualysApiUrl"},
@@ -2616,13 +3412,13 @@
             }
         },
 
-      "PermissionForEventsToInvokeLambda": {
+      "PermissionForEventsToInvokeLambdaforWindows": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
-              "FunctionName": { "Ref": "SetupContinuousAssessmentLambdaFunction" },
+              "FunctionName": { "Ref": "SetupContinuousAssessmentLambdaFunctionforWindows" },
               "Action": "lambda:InvokeFunction",
               "Principal": "events.amazonaws.com",
-              "SourceArn": { "Fn::GetAtt": ["ScheduledRule", "Arn"] }
+              "SourceArn": { "Fn::GetAtt": ["ScheduledRuleforWindows", "Arn"] }
             }
           },
 
@@ -2694,16 +3490,11 @@
                              {
                            "Effect": "Allow",
                            "Action":"ssm:StartAutomationExecution",
-                           "Resource":
-                           {
-                            "Fn::Join": [
-                                  "",
-                                  [
-                                      "arn:aws:ssm:", {"Ref":"AWS::Region" },":", {"Ref":"AWS::AccountId"},":automation-definition/",{"Ref": "RunContinuousInspection"},":*"
-                                  ]
-                                  ]
-                                }
-                                },
+                           "Resource":[
+                           {"Fn::Join": ["",["arn:aws:ssm:", {"Ref":"AWS::Region" },":", {"Ref":"AWS::AccountId"},":automation-definition/",{"Ref": "RunContinuousInspectionforLinux"},":*"]]},
+                           {"Fn::Join": ["",["arn:aws:ssm:", {"Ref":"AWS::Region" },":", {"Ref":"AWS::AccountId"},":automation-definition/",{"Ref": "RunContinuousInspectionforWindows"},":*"]]}
+                           ]
+                        },
                               {
                                   "Effect":"Allow",
                                   "Action":["ec2:CopyImage","ec2:DescribeImages"],
@@ -2754,8 +3545,81 @@
                   ]
                }
             },
-
-      "SetupContinuousAssessmentLambdaFunction":{
+            "SetupContinuousAssessmentLambdaFunctionforLinux":{
+                "Type":"AWS::Lambda::Function",
+                "Properties":{
+                   "Role":{
+                      "Fn::GetAtt":[
+                         "StartContinuousAssessmentLambdaRole",
+                         "Arn"
+                      ]
+                   },
+                   "Code":{
+                      "ZipFile":{
+                         "Fn::Join":[
+                            "",
+                            [
+                         "\n","import json",
+                         "\n","import urllib.parse",
+                         "\n","import boto3",
+                         "\n","import time",
+                         "\n","import os",
+                         "\n","def lambda_handler(event, context):",
+                         "\n","    amisParamName = event['AMIsParamName'];",
+                         "\n","    qualysUsername = event['qualysUserParamName'];",
+                         "\n","    qualysPassword = event['qualysPasswordParamName'];",
+                         "\n","    qualysVmOptionId = event['qualysVmOptionIdParamName'];",
+                         "\n","    qualysParentTagId = event['qualysParentTagIdParamName'];",
+                         "\n","    qualysEc2ConnectorId = event['qualysEc2ConnectorId'];",
+                         "\n","    qualysEc2ConnectorName = event['qualysEc2ConnectorName'];",
+                         "\n","    qualysScannerName = event['qualysScannerParamName'];",
+                         "\n","    qualysApiUrl = event['qualysApiUrlParamName'];",
+                         "\n","    instanceType = event['instanceType'];",
+                         "\n","    sshKey = event['sshKeyParamName'];",
+                         "\n","    region=os.environ['AWS_DEFAULT_REGION']",
+                         "\n","    ec2 = boto3.client('ec2',region)",
+                         "\n","    ssm = boto3.client('ssm',region)",
+                         "\n","    vmOptionId = ssm.get_parameter(Name=qualysVmOptionId)['Parameter']['Value']",
+                         "\n","    scannerName = ssm.get_parameter(Name=qualysScannerName)['Parameter']['Value']",
+                         "\n","    parentTagId = ssm.get_parameter(Name=qualysParentTagId)['Parameter']['Value']",
+                         "\n","    ec2ConnectorId = ssm.get_parameter(Name=qualysEc2ConnectorId)['Parameter']['Value']",
+                         "\n","    ec2ConnectorName = ssm.get_parameter(Name=qualysEc2ConnectorName)['Parameter']['Value']",
+                         "\n","    sshKeyName = ssm.get_parameter(Name=sshKey)['Parameter']['Value']",
+                         "\n","    amisJson =  ssm.get_parameter(Name=amisParamName)['Parameter']['Value']",
+                         "\n","    items = amisJson.split(',')",
+                         "\n","    instanceIDs = ''",
+                         "\n","    for entry in items:",
+                         "\n","        images= ec2.describe_images(ImageIds=[entry],DryRun=False)",
+                         "\n","        if images['Images'][0]['PlatformDetails'] == 'Linux/UNIX':",
+                         "\n","            if 'Tags' in images['Images'][0]:",
+                         "\n","                tags = images['Images'][0]['Tags']",
+                         "\n","                tags.append({'Key': 'continuous-assessment-instance', 'Value': 'true'})",
+                         "\n","                response = ec2.run_instances(ImageId=entry,SubnetId='",{"Ref":"subnetPublic"},"',IamInstanceProfile={'Arn':'", {"Fn::GetAtt" : ["ManagedInstanceProfile", "Arn"] }, "'},SecurityGroupIds=['",{"Ref":"secGroup"},"'],InstanceType=instanceType,KeyName=sshKeyName,DryRun=False,MaxCount=1,MinCount=1,TagSpecifications=[{'ResourceType': 'instance','Tags': tags}])",
+                         "\n","            else:",
+                         "\n","                response = ec2.run_instances(ImageId=entry,SubnetId='",{"Ref":"subnetPublic"},"',IamInstanceProfile={'Arn':'", {"Fn::GetAtt" : ["ManagedInstanceProfile", "Arn"] }, "'}, SecurityGroupIds=['",{"Ref":"secGroup"},"'],InstanceType=instanceType,KeyName=sshKeyName,DryRun=False,MaxCount=1,MinCount=1,TagSpecifications=[{'ResourceType': 'instance','Tags': [{'Key': 'continuous-assessment-instance', 'Value': 'true'},{'Key': 'AMI-Type', 'Value': 'Golden'}]}])",
+                         "\n","            if len(instanceIDs)==0:",
+                         "\n","                instanceIDs=response['Instances'][0]['InstanceId']",
+                         "\n","            else:",
+                         "\n","                instanceIDs=instanceIDs+','+response['Instances'][0]['InstanceId']",
+                         "\n","    print(\"Instances created \"+instanceIDs)",
+                         "\n","    instanceID = instanceIDs.split(',')",
+                         "\n","    for id in instanceID:",
+                         "\n","        ssm.start_automation_execution(DocumentName='",{"Ref":"RunContinuousInspectionforLinux"},"', Parameters={'instanceIDs': [id], 'QualysUsername':[qualysUsername], 'QualysPassword':[qualysPassword], 'QualysVmOptionId':[vmOptionId], 'QualysScannerName':[scannerName], 'QualysApiUrl': [qualysApiUrl], 'QualysParentTagId': [parentTagId], 'Ec2ConnectorId': [ec2ConnectorId], 'Ec2ConnectorName': [ec2ConnectorName]})",
+                         "\n","    millis = int(round(time.time() * 1000))",
+                         "\n","    return 'Assessment started'"
+ 
+                       ]
+                             ]
+                          }
+                       },
+                       "Runtime":"python3.6",
+                       "Timeout":300,
+                       "Handler":"index.lambda_handler",
+                       "MemorySize":512
+                    }
+           },
+ 
+      "SetupContinuousAssessmentLambdaFunctionforWindows":{
                "Type":"AWS::Lambda::Function",
                "Properties":{
                   "Role":{
@@ -2779,6 +3643,9 @@
                         "\n","    qualysUsername = event['qualysUserParamName'];",
                         "\n","    qualysPassword = event['qualysPasswordParamName'];",
                         "\n","    qualysVmOptionId = event['qualysVmOptionIdParamName'];",
+                        "\n","    qualysParentTagId = event['qualysParentTagIdParamName'];",
+                        "\n","    qualysEc2ConnectorId = event['qualysEc2ConnectorId'];",
+                        "\n","    qualysEc2ConnectorName = event['qualysEc2ConnectorName'];",
                         "\n","    qualysScannerName = event['qualysScannerParamName'];",
                         "\n","    qualysApiUrl = event['qualysApiUrlParamName'];",
                         "\n","    instanceType = event['instanceType'];",
@@ -2786,26 +3653,33 @@
                         "\n","    region=os.environ['AWS_DEFAULT_REGION']",
                         "\n","    ec2 = boto3.client('ec2',region)",
                         "\n","    ssm = boto3.client('ssm',region)",
+                        "\n","    vmOptionId = ssm.get_parameter(Name=qualysVmOptionId)['Parameter']['Value']",
+                        "\n","    scannerName = ssm.get_parameter(Name=qualysScannerName)['Parameter']['Value']",
+                        "\n","    parentTagId = ssm.get_parameter(Name=qualysParentTagId)['Parameter']['Value']",
+                        "\n","    ec2ConnectorId = ssm.get_parameter(Name=qualysEc2ConnectorId)['Parameter']['Value']",
+                        "\n","    ec2ConnectorName = ssm.get_parameter(Name=qualysEc2ConnectorName)['Parameter']['Value']",
+                        "\n","    sshKeyName = ssm.get_parameter(Name=sshKey)['Parameter']['Value']",
                         "\n","    amisJson =  ssm.get_parameter(Name=amisParamName)['Parameter']['Value']",
                         "\n","    items = amisJson.split(',')",
                         "\n","    instanceIDs = ''",
                         "\n","    for entry in items:",
                         "\n","        images= ec2.describe_images(ImageIds=[entry],DryRun=False)",
-                        "\n","        if 'Tags' in images['Images'][0]:",
-                        "\n","            tags = images['Images'][0]['Tags']",
-                        "\n","            tags.append({'Key': 'continuous-assessment-instance', 'Value': 'true'})",
-                        "\n","            response = ec2.run_instances(ImageId=entry,SubnetId='",{"Ref":"subnetPublic"},"',IamInstanceProfile={'Arn':'", {"Fn::GetAtt" : ["ManagedInstanceProfile", "Arn"] }, "'},SecurityGroupIds=['",{"Ref":"secGroup"},"'],InstanceType=instanceType,KeyName=sshKey,DryRun=False,MaxCount=1,MinCount=1,TagSpecifications=[{'ResourceType': 'instance','Tags': tags}])",
-                        "\n","        else:",
-                        "\n","            response = ec2.run_instances(ImageId=entry,SubnetId='",{"Ref":"subnetPublic"},"',IamInstanceProfile={'Arn':'", {"Fn::GetAtt" : ["ManagedInstanceProfile", "Arn"] }, "'}, SecurityGroupIds=['",{"Ref":"secGroup"},"'],InstanceType=instanceType,KeyName=sshKey,DryRun=False,MaxCount=1,MinCount=1,TagSpecifications=[{'ResourceType': 'instance','Tags': [{'Key': 'continuous-assessment-instance', 'Value': 'true'},{'Key': 'AMI-Type', 'Value': 'Golden'}]}])",
-                        "\n","        if len(instanceIDs)==0:",
-                        "\n","            instanceIDs=response['Instances'][0]['InstanceId']",
-                        "\n","        else:",
-                        "\n","            instanceIDs=instanceIDs+','+response['Instances'][0]['InstanceId']",
+                        "\n","        if images['Images'][0]['PlatformDetails'] == 'Windows':",
+                        "\n","            if 'Tags' in images['Images'][0]:",
+                        "\n","                tags = images['Images'][0]['Tags']",
+                        "\n","                tags.append({'Key': 'continuous-assessment-instance', 'Value': 'true'})",
+                        "\n","                response = ec2.run_instances(ImageId=entry,SubnetId='",{"Ref":"subnetPublic"},"',IamInstanceProfile={'Arn':'", {"Fn::GetAtt" : ["ManagedInstanceProfile", "Arn"] }, "'},SecurityGroupIds=['",{"Ref":"secGroup"},"'],InstanceType=instanceType,KeyName=sshKeyName,DryRun=False,MaxCount=1,MinCount=1,TagSpecifications=[{'ResourceType': 'instance','Tags': tags}])",
+                        "\n","            else:",
+                        "\n","                response = ec2.run_instances(ImageId=entry,SubnetId='",{"Ref":"subnetPublic"},"',IamInstanceProfile={'Arn':'", {"Fn::GetAtt" : ["ManagedInstanceProfile", "Arn"] }, "'}, SecurityGroupIds=['",{"Ref":"secGroup"},"'],InstanceType=instanceType,KeyName=sshKeyName,DryRun=False,MaxCount=1,MinCount=1,TagSpecifications=[{'ResourceType': 'instance','Tags': [{'Key': 'continuous-assessment-instance', 'Value': 'true'},{'Key': 'AMI-Type', 'Value': 'Golden'}]}])",
+                        "\n","            if len(instanceIDs)==0:",
+                        "\n","                instanceIDs=response['Instances'][0]['InstanceId']",
+                        "\n","            else:",
+                        "\n","                instanceIDs=instanceIDs+','+response['Instances'][0]['InstanceId']",
 
                         "\n","    print(\"Instances created \"+instanceIDs)",
                         "\n","    instanceID = instanceIDs.split(',')",
                         "\n","    for id in instanceID:",
-                        "\n","        ssm.start_automation_execution(DocumentName='",{"Ref":"RunContinuousInspection"},"', Parameters={'instanceIDs': [id], 'QualysUsername':[qualysUsername], 'QualysPassword':[qualysPassword], 'QualysVmOptionId':[qualysVmOptionId], 'QualysScannerName':[qualysScannerName], 'QualysApiUrl': [qualysApiUrl]})",
+                        "\n","        ssm.start_automation_execution(DocumentName='",{"Ref":"RunContinuousInspectionforWindows"},"', Parameters={'instanceIDs': [id], 'QualysUsername':[qualysUsername], 'QualysPassword':[qualysPassword], 'QualysVmOptionId':[vmOptionId], 'QualysScannerName':[scannerName], 'QualysApiUrl': [qualysApiUrl], 'QualysParentTagId': [parentTagId], 'Ec2ConnectorId': [ec2ConnectorId], 'Ec2ConnectorName': [ec2ConnectorName]})",
                         "\n","    millis = int(round(time.time() * 1000))",
                         "\n","    return 'Assessment started'"
 
@@ -2831,10 +3705,17 @@
             }
         },
 
-       "GoldenAMIAutomationDoc": {
+       "GoldenAMIAutomationDocforLinux": {
             "Description": "The Name of the document that creates Golden AMI and executes Qualys accessment.",
             "Value": {
-                "Ref": "GoldenAMIAutomationDoc"
+                "Ref": "GoldenAMIAutomationDocforLinux"
+            }
+        },
+
+        "GoldenAMIAutomationDocforWindows": {
+            "Description": "The Name of the document that creates Golden AMI and executes Qualys accessment.",
+            "Value": {
+                "Ref": "GoldenAMIAutomationDocforWindows"
             }
         },
 
@@ -2845,12 +3726,18 @@
             }
          },
 
-       "SetupContinuousAssessmentLambdaFunction":{
+       "SetupContinuousAssessmentLambdaFunctionforLinux":{
          "Description":"The Lambda function that initiates the vulnerability assessment.",
          "Value":{
-            "Ref":"SetupContinuousAssessmentLambdaFunction"
+            "Ref":"SetupContinuousAssessmentLambdaFunctionforLinux"
          }
         },
+        "SetupContinuousAssessmentLambdaFunctionforWindows":{
+            "Description":"The Lambda function that initiates the vulnerability assessment.",
+            "Value":{
+               "Ref":"SetupContinuousAssessmentLambdaFunctionforWindows"
+            }
+           },
 
        "DecommissionAMIVersionDoc":{
          "Description":"The Name of the document that decomissions a golden AMI version.",
@@ -2858,12 +3745,18 @@
             "Ref":"DecommissionAMIVersion"
           }
         },
-       "ContinuousInspectionScheduledRule":{
+       "ContinuousInspectionScheduledRuleforLinux":{
          "Description":"The Cloudwatch rule that executes the continuous inspection at the rate you specified.",
          "Value":{
-            "Ref":"ScheduledRule"
+            "Ref":"ScheduledRuleforLinux"
          }
-        }
+        },
+        "ContinuousInspectionScheduledRuleforWindows":{
+            "Description":"The Cloudwatch rule that executes the continuous inspection at the rate you specified.",
+            "Value":{
+               "Ref":"ScheduledRuleforWindows"
+            }
+           }
       }
 
 }
